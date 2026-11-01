@@ -1,0 +1,725 @@
+:root {
+  color-scheme: light;
+  --font: ui-rounded, 'SF Pro Rounded', 'Arial Rounded MT Bold', system-ui, -apple-system, sans-serif;
+  --ink: #263238;
+  --pad-t: max(14px, env(safe-area-inset-top, 0px));
+  --pad-r: max(16px, env(safe-area-inset-right, 0px));
+  --pad-b: max(14px, env(safe-area-inset-bottom, 0px));
+  --pad-l: max(16px, env(safe-area-inset-left, 0px));
+}
+
+/* Nada rola, nada é selecionável, sem menus de toque longo. */
+html,
+body {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #f57c00;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  touch-action: none;
+}
+
+#app {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------- telas e temas por mundo ---------- */
+
+.screen {
+  --bg-top: #fb8c00;
+  --bg-bottom: #ffe0b2;
+  --accent: #ef6c00;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  padding: var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-l);
+  background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+  overflow: hidden;
+}
+
+.screen[data-group='1'] {
+  --bg-top: #ec407a;
+  --bg-bottom: #f8bbd0;
+  --accent: #c2185b;
+}
+
+.screen[data-group='2'] {
+  --bg-top: #1e88e5;
+  --bg-bottom: #bbdefb;
+  --accent: #1565c0;
+}
+
+.screen[data-group='name'] {
+  --bg-top: #7e57c2;
+  --bg-bottom: #d1c4e9;
+  --accent: #5e35b1;
+}
+
+/* ---------- botões ---------- */
+
+.btn {
+  --size: clamp(64px, 11vmin, 92px);
+  --face: #ffffff;
+  --edge: rgba(0, 0, 0, 0.2);
+  --icon: var(--accent);
+  appearance: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  flex: none;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 30%;
+  background: var(--face);
+  color: var(--icon);
+  box-shadow: 0 6px 0 var(--edge), 0 10px 18px rgba(0, 0, 0, 0.15);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.btn:active {
+  transform: translateY(4px) scale(0.96);
+  box-shadow: 0 2px 0 var(--edge), 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn svg {
+  display: block;
+  width: 56%;
+  height: 56%;
+  pointer-events: none;
+}
+
+.btn.big {
+  --size: clamp(120px, 24vmin, 190px);
+  --face: #43a047;
+  --edge: #2e7d32;
+  --icon: #ffffff;
+  border-radius: 50%;
+  animation: breathe 1.4s ease-in-out infinite;
+}
+
+.btn.big:active {
+  animation: none;
+}
+
+.btn.big svg {
+  width: 50%;
+  height: 50%;
+}
+
+.btn.play svg {
+  transform: translateX(6%);
+}
+
+.btn.small {
+  --size: clamp(56px, 9vmin, 76px);
+}
+
+.btn.hint {
+  --face: #ffeb3b;
+  --edge: #f9a825;
+  --icon: #f57f17;
+}
+
+.btn.off {
+  --icon: #90a4ae;
+}
+
+@keyframes breathe {
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+/* ---------- tela inicial ---------- */
+
+.home {
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 2vmin;
+}
+
+.title {
+  margin: 0;
+  text-align: center;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: clamp(40px, 9vmin, 96px);
+  line-height: 1;
+  text-shadow: 0 5px 0 #e65100, 0 10px 22px rgba(0, 0, 0, 0.2);
+}
+
+.title span {
+  display: block;
+  color: #fff59d;
+  text-shadow: 0 5px 0 #f57f17, 0 10px 22px rgba(0, 0, 0, 0.2);
+}
+
+.hero {
+  width: min(52vmin, 46vh);
+}
+
+.hero-btn {
+  appearance: none;
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 4%;
+  border-radius: 12%;
+  background: #ffffff;
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.12), 0 14px 28px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.hero svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.home-actions {
+  display: flex;
+  align-items: center;
+  gap: clamp(20px, 5vmin, 48px);
+}
+
+/* ---------- mapa de fases ---------- */
+
+.map {
+  flex-direction: column;
+  gap: 2vmin;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.map-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  container-type: size;
+  padding: 8px;
+}
+
+.map-grid {
+  --side: min(100cqw, 100cqh);
+  width: var(--side);
+  height: var(--side);
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  gap: calc(var(--side) * 0.028);
+}
+
+.tile {
+  --t: #ffca28;
+  --t-edge: #f9a825;
+  --t-ink: #5d4037;
+  appearance: none;
+  position: relative;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 900;
+  font-size: calc(var(--side) / 6 * 0.56);
+  color: var(--t-ink);
+  background: var(--t);
+  border-radius: 24%;
+  box-shadow: 0 5px 0 var(--t-edge);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.tile[data-group='1'] {
+  --t: #f06292;
+  --t-edge: #c2185b;
+  --t-ink: #ffffff;
+}
+
+.tile[data-group='2'] {
+  --t: #42a5f5;
+  --t-edge: #1565c0;
+  --t-ink: #ffffff;
+}
+
+.tile:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--t-edge);
+}
+
+.tile .num {
+  pointer-events: none;
+}
+
+.tile .sticker {
+  position: absolute;
+  top: -8%;
+  right: -8%;
+  width: 42%;
+  height: 42%;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #ffb300;
+  display: none;
+  place-items: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.tile .sticker svg {
+  width: 68%;
+  height: 68%;
+}
+
+.tile.done .sticker {
+  display: grid;
+}
+
+.tile.next {
+  outline: 4px solid #ffffff;
+  outline-offset: 3px;
+  animation: breathe 1.1s ease-in-out infinite;
+}
+
+/* ---------- fase ---------- */
+
+.game {
+  flex-direction: column;
+  gap: 2vmin;
+}
+
+.game .board {
+  order: 1;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vmin;
+}
+
+.game .controls {
+  order: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(14px, 4vmin, 40px);
+}
+
+@media (orientation: landscape) {
+  .game {
+    flex-direction: row;
+  }
+
+  .game .controls {
+    order: 0;
+    flex-direction: column;
+  }
+}
+
+.badge {
+  --size: clamp(56px, 9vmin, 76px);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: calc(var(--size) * 0.56);
+  font-family: inherit;
+  color: #ffffff;
+  background: var(--accent);
+  border: 0;
+  padding: 0;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* ---------- botão do nome (mapa) ---------- */
+
+.topbar {
+  justify-content: space-between;
+}
+
+.name-pill {
+  appearance: none;
+  position: relative;
+  border: 0;
+  margin: 0 auto;
+  padding: 0.12em 0.6em 0.18em;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
+  font: inherit;
+  font-weight: 900;
+  font-size: clamp(30px, 6vmin, 56px);
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  cursor: pointer;
+  touch-action: manipulation;
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+.name-pill:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+  animation: none;
+}
+
+.name-pill .sticker {
+  position: absolute;
+  top: -22%;
+  right: -4%;
+  width: 0.9em;
+  height: 0.9em;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #ffb300;
+  display: none;
+  place-items: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.name-pill .sticker svg {
+  width: 72%;
+  height: 72%;
+}
+
+.name-pill.done .sticker {
+  display: grid;
+}
+
+/* Espaço igual ao do botão de início, para o nome ficar no meio. */
+.topbar::after {
+  content: '';
+  width: clamp(64px, 11vmin, 92px);
+  flex: none;
+}
+
+/* ---------- o nome, letra por letra ---------- */
+
+.word {
+  display: flex;
+  justify-content: center;
+  gap: clamp(6px, 1.2vmin, 12px);
+}
+
+.word-letter {
+  --c: #e53935;
+  width: clamp(40px, 7vmin, 64px);
+  aspect-ratio: 1;
+  border-radius: 24%;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: clamp(24px, 4.4vmin, 40px);
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.25);
+  transition: background 0.3s, color 0.3s, transform 0.3s;
+}
+
+.word-letter.done {
+  color: #ffffff;
+  background: var(--c);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.2);
+}
+
+.word-letter.current {
+  color: var(--accent);
+  background: #ffffff;
+  transform: scale(1.12);
+}
+
+/* ---------- folha ---------- */
+
+.paper-wrap {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  container-type: size;
+}
+
+.paper {
+  width: min(100cqw, 100cqh);
+  aspect-ratio: 1;
+  border-radius: 6%;
+  background: #ffffff;
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.1), 0 16px 32px rgba(0, 0, 0, 0.18);
+}
+
+.letter {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  overflow: visible;
+}
+
+.letter .guides line {
+  stroke: #bbdefb;
+  stroke-width: 0.6;
+}
+
+.letter .guides .mid {
+  stroke-dasharray: 2 2;
+}
+
+.lane-edge,
+.lane,
+.dot-line,
+.trace {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lane-edge {
+  stroke: #cfd8dc;
+  stroke-width: 15.5;
+}
+
+.lane {
+  stroke: #f5f7f8;
+  stroke-width: 12.5;
+}
+
+.dot-line {
+  stroke: #78909c;
+  stroke-width: 2.4;
+  stroke-dasharray: 0 4.6;
+}
+
+.dot-line.future {
+  stroke: #cfd8dc;
+}
+
+.trace {
+  stroke-width: 11;
+}
+
+.letter.finished .traces {
+  animation: shine 0.9s ease-in-out 2;
+}
+
+@keyframes shine {
+  50% {
+    filter: brightness(1.25) saturate(1.2);
+  }
+}
+
+.start .dot {
+  fill: #43a047;
+  stroke: #ffffff;
+  stroke-width: 1.4;
+}
+
+.start .ring {
+  fill: none;
+  stroke: #43a047;
+  stroke-width: 1.2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ring 1.4s ease-out infinite;
+}
+
+.start .arrow {
+  fill: #ffffff;
+}
+
+@keyframes ring {
+  from {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.goal path {
+  fill: #ffc107;
+  stroke: #ffffff;
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.guide {
+  fill: #ffeb3b;
+  stroke: #f57f17;
+  stroke-width: 0.8;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sparkles,
+.pencil,
+.marks {
+  pointer-events: none;
+}
+
+.pencil .tip {
+  fill: var(--tip, #e53935);
+}
+
+.pencil-body {
+  animation: bob 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes bob {
+  to {
+    transform: translateY(-1.6px);
+  }
+}
+
+/* Dedo saiu do caminho: o lápis balança, esperando. */
+.pencil.waiting .pencil-body {
+  animation: wait 0.5s ease-in-out infinite;
+}
+
+@keyframes wait {
+  25% {
+    transform: rotate(-7deg);
+  }
+  75% {
+    transform: rotate(7deg);
+  }
+}
+
+/* ---------- vitória: sem cobrir a letra ---------- */
+
+.game .win {
+  background: none;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-l);
+}
+
+.game .win-card {
+  pointer-events: auto;
+}
+
+.game .medal {
+  width: clamp(80px, 14vmin, 120px);
+  color: #ffb300;
+}
+
+@media (orientation: portrait) {
+  .game .win {
+    justify-content: center;
+  }
+
+  .game .win-card {
+    flex-direction: row;
+  }
+
+  /* Em pé, o cartão da vitória fica no lugar dos botões. */
+  .game.won .controls {
+    visibility: hidden;
+  }
+}
+
+/* ---------- vitória ---------- */
+
+.win {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.35);
+  animation: fade-in 0.25s ease-out;
+}
+
+.win-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3vmin;
+}
+
+.medal {
+  width: clamp(110px, 22vmin, 180px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #43a047;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.12);
+  animation: pop-in 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+.medal.trophy {
+  color: #ffb300;
+  background: #fff8e1;
+}
+
+.medal svg {
+  width: 62%;
+  height: 62%;
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0) rotate(-20deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.confetti-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti {
+  position: absolute;
+  top: -40px;
+  border-radius: 2px;
+}
