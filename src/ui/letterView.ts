@@ -5,7 +5,7 @@
 
 import { sfx } from '../audio/sfx.ts';
 import { cumulative, pathD, type Pt } from '../glyphs/geometry.ts';
-import { STEP, type Glyph } from '../glyphs/glyphs.ts';
+import { GUIDES, STEP, isDot, type Glyph } from '../glyphs/glyphs.ts';
 import { Tracker } from '../glyphs/tracker.ts';
 import { artTransform, lookAt, pencilSvg, rainbowAt, rainbowGradient, tiltAt } from './pencil.ts';
 
@@ -34,6 +34,7 @@ function el<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, 
 export class LetterView {
   readonly root: HTMLElement;
   private readonly svg: SVGSVGElement;
+  private readonly guides: SVGGElement;
   private readonly lanes: SVGGElement;
   private readonly dots: SVGGElement;
   private readonly traces: SVGGElement;
@@ -71,12 +72,9 @@ export class LetterView {
     this.root.append(paper);
 
     this.svg = el('svg', { viewBox: '0 0 100 100', class: 'letter' });
-    this.svg.innerHTML = `
-      <defs>${rainbowGradient('rainbow')}</defs>
-      <g class="guides">
-        <line x1="4" x2="96" y1="12" y2="12"/><line x1="4" x2="96" y1="88" y2="88"/>
-        <line class="mid" x1="4" x2="96" y1="50" y2="50"/>
-      </g>`;
+    this.svg.innerHTML = `<defs>${rainbowGradient('rainbow')}</defs>`;
+    this.guides = el('g', { class: 'guides' });
+    this.svg.append(this.guides);
     this.lanes = el('g', { class: 'lanes' });
     this.dots = el('g', { class: 'dots' });
     this.traces = el('g', { class: 'traces' });
@@ -107,6 +105,11 @@ export class LetterView {
     this.tracker = new Tracker(glyph.strokes, STEP);
     this.lengths = glyph.strokes.map((s) => cumulative(s));
     this.totalLength = this.lengths.reduce((sum, c) => sum + c[c.length - 1], 0) || 1;
+    this.guides.replaceChildren(
+      ...GUIDES[glyph.lower ? 'lower' : 'upper'].map(([y, kind]) =>
+        el('line', { x1: 4, x2: 96, y1: y, y2: y, class: kind }),
+      ),
+    );
     this.lanes.replaceChildren();
     this.dots.replaceChildren();
     this.traces.replaceChildren();
@@ -196,7 +199,8 @@ export class LetterView {
     this.startMark.style.display = t.index === 0 ? '' : 'none';
     this.startMark.setAttribute('transform', `translate(${x0} ${y0}) rotate(${angle.toFixed(1)})`);
     const [gx, gy] = s[s.length - 1];
-    this.goalMark.style.display = '';
+    // No pingo do i/j não precisa de estrela: é só tocar.
+    this.goalMark.style.display = isDot(s) ? 'none' : '';
     this.goalMark.setAttribute('transform', `translate(${gx} ${gy})`);
   }
 

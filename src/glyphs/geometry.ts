@@ -86,6 +86,11 @@ export function resample(pts: readonly Pt[], step = 1): Pt[] {
   return out;
 }
 
+/** Traço tão curto que é só um pingo (como o do i): basta tocar. */
+export function isDot(stroke: readonly Pt[]): boolean {
+  return stroke.length <= 5;
+}
+
 /** Caminho SVG ("M x y L ...") passando pelos pontos. */
 export function pathD(pts: readonly Pt[]): string {
   return pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(2)} ${p[1].toFixed(2)}`).join('');

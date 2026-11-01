@@ -4,7 +4,7 @@
 // Ele avança pelo caminho enquanto o caminho continua perto do dedo; assim
 // não dá para "pular" partes, cortar pontas (V, W) nem atalhar laços (O, 8).
 
-import type { Pt } from './geometry.ts';
+import { isDot, type Pt } from './geometry.ts';
 
 export interface TrackerOptions {
   /** Distância máxima do dedo até o caminho (fora disso o lápis para). */
@@ -15,9 +15,11 @@ export interface TrackerOptions {
   readonly endSlack: number;
   /** O dedo pode recomeçar até esta distância à frente do lápis. */
   readonly start: number;
+  /** No começo de cada traço, o dedo precisa chegar até aqui perto do início. */
+  readonly arm: number;
 }
 
-export const DEFAULT_OPTIONS: TrackerOptions = { tolerance: 11, window: 20, endSlack: 2, start: 6 };
+export const DEFAULT_OPTIONS: TrackerOptions = { tolerance: 11, window: 20, endSlack: 2, start: 6, arm: 7 };
 
 /**
  * off: dedo longe do caminho; hold: perto, mas não andou;
@@ -33,6 +35,12 @@ export class Tracker {
   stroke = 0;
   /** Posição do lápis no traço atual (índice do ponto). */
   index = 0;
+  /**
+   * O dedo já chegou ao começo do traço atual. Sem isso, ao terminar um traço
+   * perto do meio do próximo (bolinha do "a" e a perninha), o lápis pularia
+   * para lá e pintaria um pedaço sozinho.
+   */
+  private armed = false;
 
   constructor(strokes: readonly (readonly Pt[])[], step = 1, options: TrackerOptions = DEFAULT_OPTIONS) {
     this.strokes = strokes;
@@ -56,6 +64,7 @@ export class Tracker {
   reset(): void {
     this.stroke = 0;
     this.index = 0;
+    this.armed = false;
   }
 
   /** Dedo em (x, y). */
@@ -65,6 +74,15 @@ export class Tracker {
     const last = pts.length - 1;
     const tol = this.options.tolerance;
     const d = (j: number) => Math.hypot(x - pts[j][0], y - pts[j][1]);
+    // Pingo: qualquer toque perto dele já pinta.
+    if (isDot(pts)) {
+      if (!pts.some((_, j) => d(j) <= this.options.tolerance)) return 'off';
+      return this.nextStroke();
+    }
+    if (!this.armed) {
+      if (d(this.index) > this.options.arm) return 'off';
+      this.armed = true;
+    }
     // O dedo precisa estar perto do lápis (ou um tiquinho à frente dele)...
     const near = Math.min(last, this.index + Math.round(this.options.start / this.step));
     let j = this.index;
@@ -87,11 +105,14 @@ export class Tracker {
     if (best <= this.index) return 'hold';
     this.index = best;
     const end = pts.length - 1 - Math.round(this.options.endSlack / this.step);
-    if (this.index >= end) {
-      this.stroke++;
-      this.index = 0;
-      return this.done ? 'done' : 'stroke';
-    }
+    if (this.index >= end) return this.nextStroke();
     return 'advance';
+  }
+
+  private nextStroke(): FeedResult {
+    this.stroke++;
+    this.index = 0;
+    this.armed = false;
+    return this.done ? 'done' : 'stroke';
   }
 }

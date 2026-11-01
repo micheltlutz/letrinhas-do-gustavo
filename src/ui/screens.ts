@@ -2,7 +2,7 @@
 
 import { sfx } from '../audio/sfx.ts';
 import { pathD } from '../glyphs/geometry.ts';
-import { GLYPHS, NAME, ORDER, glyphById, groupOf, type Glyph } from '../glyphs/glyphs.ts';
+import { GLYPHS, NAMES, ORDERS, glyphById, groupOf, type Glyph, type LetterCase } from '../glyphs/glyphs.ts';
 import { store } from '../storage.ts';
 import { clearConfetti, confetti } from './confetti.ts';
 import { ICONS, iconButton } from './icons.ts';
@@ -81,7 +81,7 @@ export class HomeScreen {
     });
     actions.append(
       onTap(iconButton('grid', 'Letras'), () => nav.map()),
-      onTap(iconButton('play', 'Jogar', 'big play'), () => nav.play(store.nextOf(ORDER))),
+      onTap(iconButton('play', 'Jogar', 'big play'), () => nav.play(store.nextOf(ORDERS[store.letterCase]))),
       this.soundBtn,
     );
   }
@@ -100,6 +100,7 @@ export class MapScreen {
   readonly el = makeScreen('map');
   private readonly tiles: HTMLButtonElement[] = [];
   private readonly namePill: HTMLButtonElement;
+  private readonly caseButtons: Record<LetterCase, HTMLButtonElement>;
 
   constructor(nav: Nav) {
     this.el.dataset.group = '0';
@@ -107,19 +108,36 @@ export class MapScreen {
     this.namePill = document.createElement('button');
     this.namePill.type = 'button';
     this.namePill.className = 'name-pill';
-    this.namePill.setAttribute('aria-label', 'Escrever GUSTAVO');
-    this.namePill.innerHTML = `${rainbowText(NAME)}<span class="sticker">${ICONS.star}</span>`;
+
+    // Chave A / a: maiúsculas ou minúsculas.
+    const toggle = document.createElement('div');
+    toggle.className = 'case-toggle';
+    const caseButton = (c: LetterCase, text: string, label: string) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = text;
+      b.setAttribute('aria-label', label);
+      onTap(b, () => {
+        store.letterCase = c;
+        this.show();
+      });
+      toggle.append(b);
+      return b;
+    };
+    this.caseButtons = {
+      upper: caseButton('upper', 'A', 'Letras maiúsculas'),
+      lower: caseButton('lower', 'a', 'Letras minúsculas'),
+    };
+
     this.el
       .querySelector('.topbar')!
-      .append(onTap(iconButton('home', 'Início'), () => nav.home()), onTap(this.namePill, () => nav.name()));
+      .append(onTap(iconButton('home', 'Início'), () => nav.home()), onTap(this.namePill, () => nav.name()), toggle);
     const grid = this.el.querySelector('.map-grid')!;
-    GLYPHS.forEach((g, i) => {
+    ORDERS.upper.forEach((_, i) => {
       const tile = document.createElement('button');
       tile.type = 'button';
       tile.className = 'tile';
-      tile.dataset.group = String(groupOf(g.id));
-      tile.setAttribute('aria-label', g.id);
-      tile.innerHTML = `<span class="num">${g.id}</span><span class="sticker">${ICONS.star}</span>`;
+      tile.innerHTML = `<span class="num"></span><span class="sticker">${ICONS.star}</span>`;
       onTap(tile, () => nav.play(i));
       grid.appendChild(tile);
       this.tiles.push(tile);
@@ -127,13 +145,22 @@ export class MapScreen {
   }
 
   show(): void {
-    const next = store.nextOf(ORDER);
-    const allDone = ORDER.every((id) => store.isDone(id));
+    const c = store.letterCase;
+    const order = ORDERS[c];
+    const next = store.nextOf(order);
+    const allDone = order.every((id) => store.isDone(id));
     this.tiles.forEach((tile, i) => {
-      tile.classList.toggle('done', store.isDone(ORDER[i]));
+      const id = order[i];
+      tile.querySelector('.num')!.textContent = id;
+      tile.setAttribute('aria-label', id);
+      tile.dataset.group = String(groupOf(id));
+      tile.classList.toggle('done', store.isDone(id));
       tile.classList.toggle('next', !allDone && i === next);
     });
-    this.namePill.classList.toggle('done', store.nameDone);
+    this.namePill.innerHTML = `${rainbowText(NAMES[c])}<span class="sticker">${ICONS.star}</span>`;
+    this.namePill.setAttribute('aria-label', `Escrever ${NAMES[c]}`);
+    this.namePill.classList.toggle('done', store.isNameDone(c));
+    for (const k of ['upper', 'lower'] as const) this.caseButtons[k].setAttribute('aria-pressed', String(k === c));
   }
 }
 
@@ -146,6 +173,8 @@ export class GameScreen {
   private readonly win: HTMLElement;
   private readonly nav: Nav;
   private mode: Mode = 'all';
+  private letterCase: LetterCase = 'upper';
+  private sequence: readonly string[] = ORDERS.upper;
   private index = 0;
   private glyph: Glyph = GLYPHS[0];
   /** Muda a cada letra aberta, para cancelar comemorações antigas. */
@@ -184,7 +213,6 @@ export class GameScreen {
     board.className = 'board';
     this.word = document.createElement('div');
     this.word.className = 'word';
-    this.word.innerHTML = [...NAME].map((c) => `<span class="word-letter">${c}</span>`).join('');
     board.append(this.word, this.view.root);
 
     this.win = document.createElement('div');
@@ -194,13 +222,11 @@ export class GameScreen {
     this.el.append(controls, board, this.win);
   }
 
-  private get sequence(): readonly string[] {
-    return this.mode === 'name' ? [...NAME] : ORDER;
-  }
-
   open(mode: Mode, index: number): void {
     this.session++;
     this.mode = mode;
+    this.letterCase = store.letterCase;
+    this.sequence = mode === 'name' ? [...NAMES[this.letterCase]] : ORDERS[this.letterCase];
     this.index = index;
     this.glyph = glyphById(this.sequence[index]);
     this.el.dataset.group = mode === 'name' ? 'name' : String(groupOf(this.glyph.id));
@@ -208,6 +234,7 @@ export class GameScreen {
     this.badge.setAttribute('aria-label', this.glyph.say);
     this.skipBtn.hidden = index >= this.sequence.length - 1;
     this.word.hidden = mode !== 'name';
+    if (mode === 'name') this.word.innerHTML = this.sequence.map((c) => `<span class="word-letter">${c}</span>`).join('');
     this.renderWord();
     this.win.hidden = true;
     this.el.classList.remove('won');
@@ -250,7 +277,7 @@ export class GameScreen {
     const last = this.index === this.sequence.length - 1;
     const nameDone = this.mode === 'name' && last;
     if (this.mode === 'name') this.renderWord(true);
-    if (nameDone) store.markNameDone();
+    if (nameDone) store.markNameDone(this.letterCase);
     await new Promise((r) => setTimeout(r, 250));
     if (session !== this.session) return;
     sfx.win();

@@ -1,13 +1,18 @@
-// Letras maiúsculas (letra de forma) e números, traço a traço, na ordem em
-// que se ensina a escrever. Quadrado de 100 x 100; a letra vai de y=12 a y=88.
+// Letras de forma (maiúsculas e minúsculas) e números, traço a traço, na
+// ordem em que se ensina a escrever. Quadrado de 100 x 100.
+// Maiúsculas e números vão de y=12 a y=88. Minúsculas seguem as linhas do
+// caderno: altas sobem até y=10, o corpo vai de y=40 a y=78 e as que descem
+// (g, j, p, q, y) vão até y=92.
 
 import { arc, cubic, join, line, resample, type Pt } from './geometry.ts';
 
 export interface Glyph {
-  /** O caractere ("A", "7"). */
+  /** O caractere ("A", "a", "7"). */
   readonly id: string;
   /** Como se fala (para a voz). */
   readonly say: string;
+  /** Minúscula (usa as linhas do caderno de minúsculas). */
+  readonly lower: boolean;
   /** Traços com pontos a cada STEP unidades, na ordem de escrever. */
   readonly strokes: readonly (readonly Pt[])[];
 }
@@ -91,14 +96,91 @@ const RAW: Record<string, { say: string; strokes: Pt[][] }> = {
   '9': { say: 'Nove', strokes: [arc(48, 34, 22, 22, -10, -360 + 4), line([70, 34], [70, B])] },
 };
 
-/** Ordem do mapa: A a Z e depois 0 a 9 (36 casas). */
-export const ORDER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
+// ---------- minúsculas ----------
 
-export const GLYPHS: readonly Glyph[] = ORDER.map((id) => ({
-  id,
-  say: RAW[id].say,
-  strokes: RAW[id].strokes.map((s) => resample(s, STEP)),
-}));
+const ASC = 10; // topo das letras altas (b, d, h...)
+const XH = 40; // topo do corpo da letra
+const BASE = 78; // linha de base
+const DESC = 92; // fim das que descem (g, p...)
+const XM = 59; // meio do corpo
+
+/** Bolinha das minúsculas (a, d, g, q): começa em cima à direita e gira pela esquerda. */
+const bowlCCW = (cx: number) => arc(cx, XM, 16, 19, -30, -380);
+/** Barriga do b e do p: sai da haste e gira pela direita. */
+const bowlCW = (cx: number) => arc(cx, XM, 16, 19, 180, 540);
+/** Pingo do i e do j (um tracinho curto: basta tocar). */
+const dot = (x: number) => line([x, 22], [x, 24.5]);
+
+const RAW_LOWER: Record<string, Pt[][]> = {
+  a: [bowlCCW(48), line([64, XH], [64, BASE])],
+  b: [line([34, ASC], [34, BASE]), bowlCW(50)],
+  c: [arc(52, XM, 16, 19, -40, -320)],
+  d: [bowlCCW(48), line([64, ASC], [64, BASE])],
+  e: [join(line([32, XM], [64, XM]), arc(48, XM, 16, 19, 0, -315))],
+  f: [join(arc(56, 22, 12, 12, -30, -180), line([44, 22], [44, BASE])), line([32, XH], [60, XH])],
+  g: [bowlCCW(48), join(line([64, XH], [64, 82]), arc(50, 82, 14, 10, 0, 165))],
+  h: [line([34, ASC], [34, BASE]), join(arc(49, 56, 15, 16, 180, 360), line([64, 56], [64, BASE]))],
+  i: [line([50, XH], [50, BASE]), dot(50)],
+  j: [join(line([56, XH], [56, 82]), arc(44, 82, 12, 10, 0, 160)), dot(56)],
+  k: [line([34, ASC], [34, BASE]), line([62, XH], [36, 62], [64, BASE])],
+  l: [line([50, ASC], [50, BASE])],
+  m: [
+    line([20, XH], [20, BASE]),
+    join(arc(34, 53, 14, 13, 180, 360), line([48, 53], [48, BASE])),
+    join(arc(62, 53, 14, 13, 180, 360), line([76, 53], [76, BASE])),
+  ],
+  n: [line([30, XH], [30, BASE]), join(arc(46, 55, 16, 15, 180, 360), line([62, 55], [62, BASE]))],
+  o: [arc(50, XM, 17, 19, -90, -444)],
+  p: [line([34, XH], [34, DESC]), bowlCW(50)],
+  q: [bowlCCW(48), line([64, XH], [64, DESC])],
+  r: [line([36, XH], [36, BASE]), arc(50, 54, 14, 13, 180, 320)],
+  s: [join(arc(50, 49.5, 14, 9.5, -20, -270), arc(50, 68.5, 15, 9.5, -90, 160))],
+  t: [join(line([46, 16], [46, 70]), arc(54, 70, 8, 8, 180, 30)), line([34, XH], [60, XH])],
+  u: [join(line([32, XH], [32, 62]), arc(47, 62, 15, 16, 180, 0), line([62, 62], [62, XH])), line([62, XH], [62, BASE])],
+  v: [line([28, XH], [50, BASE], [72, XH])],
+  w: [line([18, XH], [31, BASE], [50, 52], [69, BASE], [82, XH])],
+  x: [line([30, XH], [70, BASE]), line([70, XH], [30, BASE])],
+  y: [line([30, XH], [48, 74]), line([70, XH], [36, DESC])],
+  z: [line([32, XH], [68, XH], [32, BASE], [68, BASE])],
+};
+
+export type LetterCase = 'upper' | 'lower';
+
+/** Linhas da folha: [y, tipo]. Maiúsculas/números: topo, meio e base. Minúsculas: as do caderno. */
+export const GUIDES: Record<LetterCase, readonly (readonly [number, 'solid' | 'mid' | 'low'])[]> = {
+  upper: [
+    [12, 'solid'],
+    [50, 'mid'],
+    [88, 'solid'],
+  ],
+  lower: [
+    [ASC, 'solid'],
+    [XH, 'mid'],
+    [BASE, 'solid'],
+    [DESC, 'low'],
+  ],
+};
+
+const DIGITS = '0123456789';
+
+/** Ordem do mapa (36 casas): as letras do tipo escolhido e depois 0 a 9. */
+export const ORDERS: Record<LetterCase, readonly string[]> = {
+  upper: ('ABCDEFGHIJKLMNOPQRSTUVWXYZ' + DIGITS).split(''),
+  lower: ('abcdefghijklmnopqrstuvwxyz' + DIGITS).split(''),
+};
+
+/** O nome dele: tudo maiúsculo ou como se escreve um nome. */
+export const NAMES: Record<LetterCase, string> = { upper: 'GUSTAVO', lower: 'Gustavo' };
+
+function build(id: string, say: string, strokes: Pt[][], lower: boolean): Glyph {
+  return { id, say, lower, strokes: strokes.map((s) => resample(s, STEP)) };
+}
+
+/** Todas: A a Z, a a z e 0 a 9. */
+export const GLYPHS: readonly Glyph[] = [
+  ...ORDERS.upper.map((id) => build(id, RAW[id].say, RAW[id].strokes, false)),
+  ...Object.entries(RAW_LOWER).map(([id, strokes]) => build(id, RAW[id.toUpperCase()].say, strokes, true)),
+];
 
 export function glyphById(id: string): Glyph {
   return GLYPHS.find((g) => g.id === id) ?? GLYPHS[0];
@@ -106,9 +188,8 @@ export function glyphById(id: string): Glyph {
 
 /** Grupo do mapa: 0 = A a M, 1 = N a Z, 2 = números. */
 export function groupOf(id: string): number {
-  if (/[0-9]/.test(id)) return 2;
-  return id <= 'M' ? 0 : 1;
+  if (DIGITS.includes(id)) return 2;
+  return id.toUpperCase() <= 'M' ? 0 : 1;
 }
 
-/** O nome dele, letra por letra. */
-export const NAME = 'GUSTAVO';
+export { isDot } from './geometry.ts';

@@ -25,7 +25,8 @@ Bom saber:
 - Os traços seguem a **ordem de escrita** da letra de forma (de cima para baixo, da esquerda para a direita). Quando um traço termina, o lápis pula para o começo do próximo.
 - Letra completa: confete, música, uma estrela e a voz fala o nome da letra. Tocar na letra do botão redondo também fala o nome.
 - **Mapa:** A a Z e 0 a 9 (36 casas), todas liberadas. As feitas ganham estrela.
-- **GUSTAVO:** o botão com o nome no mapa leva a escrever o nome, letra por letra, com um troféu no final.
+- **Maiúsculas ou minúsculas:** a chave **A / a** no canto do mapa troca as letras. As minúsculas usam as linhas do caderno: as altas (b, d, h, l…) sobem até a linha de cima e as que descem (g, j, p, q, y) passam da linha de base. O pingo do i e do j é só tocar.
+- **GUSTAVO / Gustavo:** o botão com o nome no mapa leva a escrever o nome, letra por letra, com um troféu no final (em maiúsculas ou como se escreve um nome, conforme a chave).
 
 ## Desenvolvimento
 
@@ -40,8 +41,8 @@ npm run icons           # gera os ícones PNG a partir de public/icon.svg
 ```
 
 Estrutura:
-- `src/glyphs/glyphs.ts`: as letras e números, traço a traço (retas, arcos e curvas num quadrado de 100 x 100).
-- `src/glyphs/tracker.ts`: segue o dedo — o lápis só anda para a frente, pelo caminho, enquanto o dedo está perto.
+- `src/glyphs/glyphs.ts`: as letras (maiúsculas e minúsculas) e números, traço a traço (retas, arcos e curvas num quadrado de 100 x 100).
+- `src/glyphs/tracker.ts`: segue o dedo — o lápis só anda para a frente, pelo caminho, enquanto o dedo está perto; cada traço começa com o dedo no início dele.
 - `src/ui/letterView.ts`: a folha, a pista, o traço colorido e o lápis.
 - `src/ui/pencil.ts`: o lápis com olhinhos e as cores do arco-íris.
 - `src/ui/screens.ts`: telas inicial, mapa e folha.
